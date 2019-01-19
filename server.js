@@ -78,6 +78,13 @@ app.use('/room-finder/chat',protection, sendUserObjectToRequest ,chatRoute);
 app.get('/room-finder', (req, res) => {
     res.send({
         'statusCode': httpCodes.CONTINUE,
+        'statusMessage': 'Its working, WELCOME TO ROOMFINDER APP'
+    });
+});
+
+app.get('/', (req, res) => {
+    res.send({
+        'statusCode': httpCodes.CONTINUE,
         'statusMessage': 'Its working, WELCOME TO ROOMFINDER'
     });
 });
