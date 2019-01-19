@@ -3,7 +3,9 @@
 //Dependencies
 var crypto = require('crypto');
 var config = require('../config/config');
+const dateTime = require('date-and-time'); //date time format module
 var querystring = require('querystring');
+var jwt = require('jsonwebtoken');
 //Container for all the helpers
 var helpers = {};
 
@@ -48,6 +50,30 @@ helpers.createRandomString = function(strLength){
   }
 };
 
+helpers.parseJwtDataToUserObject = function(token){
+  return jwt.decode(token);
+}
+
+helpers.roomImageFileDescriptor = function(req){
+  filename = req.userObject.data.phone +'-'+ this.createRandomString(10) +'-'+ ( dateTime.format( new Date(), 'YYYYMMMDDdddHHmss'));
+  return './RoomImageUploads/' + filename + '.jpeg';
+}
+
+helpers.baseToImage = function(baseData , callback ){
+  if (baseData){
+    callback(null,baseData.replace(/^data:image\/jpeg;base64,/, ""));
+  } else {
+    callback(new Error('No Image'));
+  }
+}
+
+helpers.splitAndGet = function(string , splitter , index ){
+  return string.split(splitter)[index];
+}
+
+helpers.escapeRegex = function(text){
+  return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+};
 
 //export
 module.exports = helpers;

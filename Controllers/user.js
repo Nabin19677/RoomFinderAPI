@@ -1,105 +1,232 @@
-//Dependencies
-const User = require('../Models/userSchema');
+const httpCodes = require('http-status-codes');
 const helpers = require('../Helpers/helpers');
+const User = require('../Models/userSchema');
+const Room = require('../Models/roomSchema');
 
-//user controller
-user = {};
+var userCtrl = {}
 
-//user - POST METHOD
-//required - fullname,email,phone,password
-user.post = function(req,res){
-    let data = req.body;
 
-    //Leave validation if it is in client side but do a low level validation though.
-
-    //hashing password using helpers
-    data.password = helpers.hash(data.password);
-
-    User.create(data)
-        .then((data) => { //if sucessful
-            res.send({
-            'statusCode' : 201,
-            'statusMessage' : 'User added successfully' ,
-            'data' : data,
-            'Date': Date.now()
+userCtrl.profile = (req, res) => {
+    User.findOne({ phone: req.userObject.data.phone })
+        .then(userData => {
+            userData.password = null;
+            Room.find({ ownerPhone: req.userObject.data.phone }, (err, data) => {
+                if (err) {
+                    res.send({
+                        'statusCode': httpCodes.NOT_FOUND,
+                        'statusMessage': 'No room posted by ...'
+                    });
+                } else {
+                    res.send({
+                        'statusCode': httpCodes.OK,
+                        'statusMessage': 'Got rooms you owned',
+                        'user': userData,
+                        'rooms': data
+                    });
+                }
             });
         })
-        .catch((err) => {res.send({ //if error, probably something wrong with server mongodb
-            'statusCode' : 500,
-            'statusMessage' : 'SERVER ERROR'
-        })});
-
-   
-};
-
-//user - GET METHOD
-user.get = async function(req,res){
-    //req.query.phone to get from query
-    //re.params.phone if it is passed as parameters
-    // phone from query and search in database
-    //mongodb part here and send status
-    await User.findOne({ phone : req.query.phone})
-        .then((data) => {
+        .catch(err => {
             res.send({
-                'statusCode' : 200,
-                'statusMessage' : 'Found the user',
-                'data' : data
+                'statusCode': httpCodes.CONFLICT,
+                'statusMessage': 'Some error idk',
             });
-        })
-        .catch((err) => {
-            res.send({
-                'statusCode' : 500,
-                'statusMessage' : 'Cannot find the user'
-            });
-        });   
-};
-
-//user - PUT METHOD
-//Update needs a form to fill up
-//Can update anything else password here
-//first needs to verify user
-//Do something from session later 
-//leave for now
-//somehow we need to make sure user gets his unique id set by mongodb for processes like put and delete
-user.put = async function(req,res){
-    let data = req.body;
-    
-    await User.findByIdAndUpdate({ _id : data._id }, data)
-        .then((data) => {
-            res.send( {
-                'statusCode' : 200,
-                'statusMessage' : 'Updated successfully'
-            })
-        })
-        .catch((err) => {
-            res.send( {
-                'statusCode' : 500,
-                'statusMessage' : 'Cannot update the user'
-            })
         });
-};
+}
 
-//user - DELETE METHOD
-//needs to verify user
-user.delete = async function(req,res){
-    // phone from query and delete from  database
+userCtrl.editInfo = (req, res) => {
+    if (req.body.fullname || req.body.email) {
+        User.updateOne({ phone: req.userObject.data.phone }, req.body, function (err) {
+            if (err) {
+                res.send({
+                    'statusCode': httpCodes.CONFLICT,
+                    'statusMessage': 'Could not modify data'
+                });
+            } else {
+                res.send({
+                    'statusCode': httpCodes.OK,
+                    'statusMessage': 'Modified',
+                })
+            }
+        });
+    } else {
+        res.send({
+            'statusCode': httpCodes.NO_CONTENT,
+            'statusMessage': 'Please send contents to modify'
+        });
+    }
+}
 
-    //verify the user who is going to delete this user
-    //Do something from session
+// @todo take three fields : currentPassword , password 
+//check confirm password in client side
+//check current password in database and update password #dont forget to hash password
+userCtrl.changePassword = (req, res) => {
+    if (req.body.currentPassword || req.body.newPassword) {
+        User.findOne({ phone: req.userObject.data.phone })
+            .then(userData => {
+                if (helpers.hash(req.body.currentPassword) == userData.phone) {
+                    User.updateOne({ phone: req.userObject.data.phone }, req.body, (err) => {
+                        if (err) {
+                            res.send({
+                                'statusCode': httpCodes.CONFLICT,
+                                'statusMessage': 'Error changing password'
+                            });
+                        } else {
+                            res.send({
+                                'statusCode': httpCodes.OK,
+                                'statusMessage': 'Password Changed'
+                            });
+                        }
+                    });
+                } else {
+                    res.send({
+                        'statusCode': httpCodes.CONFLICT,
+                        'statusMessage': 'Password did not matched'
+                    });
+                }
+            })
+            .catch(err => {
+                res.send({
+                    'statusCode': httpCodes.NO_CONTENT,
+                    'statusMessage': 'Nothing Found'
+                });
+            });
+    } else {
+        res.send({
+            'statusCode': httpCodes.CONFLICT,
+            'statusMessage': 'No Fields'
+        });
+    }
+}
 
-    //Delete user
-    await User.deleteOne({  phone : req.query.phone })
-        .then((data) => res.send({
-            'statusCode' : 200,
-            'statusMessage' : 'User deleted'
-         })
-        )
-        .catch((err) => res.send({
-            'statusCode' : 500,
-            'statusMessage' : 'Cannot delete the user'
-         })
-        );
-    
-};
+userCtrl.getNotifications = (req, res) => {
+    User.findOne({ _id: req.userObject.data._id }, (err, userData) => {
+        if (err) {
+            res.send({
+                'statusCode': httpCodes.CONFLICT,
+                'statusMessage': 'Something fissy with our call back hell server',
+                'ERROR': err || 'Any'
+            })
+        } else {
+            res.send({
+                'statusCode': httpCodes.OK,
+                'statusMessage': 'Got your notifications',
+                'notifications': userData.notifications
+            })
+        }
+    })
+}
 
-module.exports = user;
+userCtrl.viewNotification = (req, res) => {
+    User.updateOne(
+        {
+            _id: req.userObject.data._id,
+            'notifications._id': req.body._id
+        },
+        {
+            $set: { 'notifications.$.viewed': true }
+        }
+    )
+        .then(() => {
+            if (req.body.type == "room") {
+                Room.findOne({ _id: req.body.roomId }, (err, data) => {
+                    if (err) {
+                        res.send({
+                            err
+                        })
+                    } else {
+                        res.send({
+                            'statusCode': httpCodes.OK,
+                            'statusMessage': 'Viewing your notification',
+                            'room': data
+                        })
+                    }
+                })
+            }
+        })
+        .catch(err => {
+            res.send({
+                err
+            })
+        })
+}
+
+userCtrl.notifiedNotification = (req, res) => {
+    User.updateOne(
+        {
+            _id: req.userObject.data._id,
+            'notifications._id': req.body._id
+        },
+        {
+            $set: { 'notifications.$.notified': true }
+        }
+    )
+        .then(() => {
+            if (req.body.type == "room") {
+                Room.findOne({ _id: req.body.roomId }, (err, data) => {
+                    if (err) {
+                        res.send({
+                            err
+                        })
+                    } else {
+                        res.send({
+                            'statusCode': httpCodes.OK,
+                            'statusMessage': 'Viewing your notification',
+                            'room': data
+                        })
+                    }
+                })
+            }
+        })
+        .catch(err => {
+            res.send({
+                err
+            })
+        })
+}
+
+
+userCtrl.updatePersonalInfo = (req, res) => {
+    User.updateOne({ _id: req.userObject.data._id }, { personalDetails: req.body }, (err, raw) => {
+        if (err) {
+            res.send(
+                {
+                    'statusCode': httpCodes.CONFLICT,
+                    'statusMessage': 'Error updating personal details',
+                }
+            );
+        } else {
+            res.send(
+                {
+                    'statusCode': httpCodes.OK,
+                    'statusMessage': 'Updated personal details',
+                }
+            );
+        }
+    })
+}
+
+userCtrl.getPersonalInfo = (req, res) => {
+    User.findOne({
+        _id: req.userObject.data._id
+    }, (err, data) => {
+        if (err) {
+            res.send(
+                {
+                    'statusCode': httpCodes.CONFLICT,
+                    'statusMessage': 'Couldnot get your personal details',
+                }
+            );
+        } else {
+            res.send(
+                {
+                    'statusCode': httpCodes.OK,
+                    'statusMessage': 'Got your personal details',
+                    yourInfo: data.personalDetails
+                }
+            );
+        }
+    })
+}
+
+module.exports = userCtrl;

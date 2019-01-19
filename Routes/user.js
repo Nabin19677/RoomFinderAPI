@@ -1,13 +1,18 @@
-//Dependencies
-const express = require('express');
-const router = express.Router();
+const router = require('express').Router();
 
-//Add user controller
-const user = require('../Controllers/user');
+//Home controllers
+var userCtrl = require('../Controllers/user');
 
-router.post('/post',user.post); //Use with parameters
-router.get('/view?:phone', user.get); //Use with query
-router.put('/update', user.put); //Use with parameters
-router.delete('/delete?:phone', user.delete); //Use with query
+//Routing
+router.get('/profile', userCtrl.profile);
+router.put('/editInfo', userCtrl.editInfo);
+router.put('/changePassword', userCtrl.changePassword);
+router.get('/notifications',userCtrl.getNotifications);
+router.put('/viewNotification',userCtrl.viewNotification);
+router.put('/notifiedNotification',userCtrl.notifiedNotification);
+router.get('/getPersonalInfo',userCtrl.getPersonalInfo);
+router.put('/updatePersonalInfo',userCtrl.updatePersonalInfo);
 
+
+//Export
 module.exports = router;
