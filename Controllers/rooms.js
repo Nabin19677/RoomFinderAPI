@@ -6,10 +6,10 @@ const Room = require('../Models/roomSchema');
 const User = require('../Models/userSchema');
 rooms = {}
 
-rooms.addRoom = async (req, res) => {
+rooms.addRoom = (req, res) => {
     var roomData;
     if (req.body.typeOfRent && req.body.numberOfRoom && req.body.facilitiesAvailable && req.body.price && req.body.location && (req.body.RoomImage.length > 0)) {
-        await Room.create({
+        Room.create({
             ownerId: req.userObject.data._id,
             ownerPhone: req.userObject.data.phone,
             ownerName: req.userObject.data.fullname,
@@ -20,8 +20,8 @@ rooms.addRoom = async (req, res) => {
             price: req.body.price,
             location: req.body.location
         }).then(data => {
-            roomData = data ;
-            req.body.RoomImage.forEach(image => {
+            roomImageLength = req.body.RoomImage.length;
+            req.body.RoomImage.forEach((image, index) => {
                 roomImageFileDescriptor = helpers.roomImageFileDescriptor(req);
                 helpers.baseToImage(image, (err, imageData) => {
                     if (err) {
@@ -45,7 +45,15 @@ rooms.addRoom = async (req, res) => {
                                         }
                                     })
                                     .then(updated => {
-                                        console.log('updated');
+                                        console.log( 'Index : ' + index);
+                                        console.log( 'Room : ' + roomImageLength);
+                                        if (roomImageLength == (index+1) ) {
+                                            res.send({
+                                                'statusCode': 200,
+                                                'statusMessage': 'Room has been added',
+                                                'roomData': data
+                                            })
+                                        }
                                     })
                                     .catch(err => {
                                         res.send({
@@ -65,44 +73,7 @@ rooms.addRoom = async (req, res) => {
                     'statusMessage': 'Something fissy wmith server'
                 });
             })
-
-        console.log('When will I come here')
-        await User.updateMany({
-            _id: { $nin: [req.userObject.data._id] },
-            personalDetails: {
-                typeOfRent : roomData.typeOfRent,
-                // food: req.userObject.data.personalDetails.food,
-                // smoking: req.userObject.data.personalDetails.smoking,
-                // drinking: req.userObject.data.personalDetails.drinking,
-                // cleanliness: req.userObject.data.personalDetails.cleanliness
-            }
-        }, {
-                $push: {
-                    notifications: {
-                        type: 'room',
-                        pusherId: req.userObject.data._id,
-                        pusherName: req.userObject.data.fullname,
-                        message: `${req.userObject.data.fullname} added new Room of your interest.`,
-                        roomId: roomData._id
-                    }
-                }
-            }, (err, raw) => {
-                if (err) {
-                    console.log('user update error');
-                    res.send({
-                        'statusCode': 500,
-                        'statusMessage': 'Something fissy with server'
-                    });
-                } else {
-                    console.log('user updated');
-                    res.send({
-                        'statusCode': 200,
-                        'statusMessage': 'Room Added'
-                    });
-                }
-            })
     } else {
-        console.log("WHy here????");
         res.send({
             'statusCode': 400,
             'statusMessage': 'Fill all the form please'
