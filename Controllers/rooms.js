@@ -22,7 +22,7 @@ rooms.addRoom = async (req, res) => {
         }).then(data => {
             roomData = data ;
             req.body.RoomImage.forEach(image => {
-                roomImageFileDescriptor = helpers.roomImageFileDescriptor(req);//working upto here
+                roomImageFileDescriptor = helpers.roomImageFileDescriptor(req);
                 helpers.baseToImage(image, (err, imageData) => {
                     if (err) {
                         res.send({
@@ -67,7 +67,7 @@ rooms.addRoom = async (req, res) => {
             })
 
         console.log('When will I come here')
-        User.updateMany({
+        await User.updateMany({
             _id: { $nin: [req.userObject.data._id] },
             personalDetails: {
                 typeOfRent : roomData.typeOfRent,
