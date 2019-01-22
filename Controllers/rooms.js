@@ -45,8 +45,6 @@ rooms.addRoom = (req, res) => {
                                         }
                                     })
                                     .then(updated => {
-                                        console.log( 'Index : ' + index);
-                                        console.log( 'Room : ' + roomImageLength);
                                         if (roomImageLength == (index+1) ) {
                                             res.send({
                                                 'statusCode': 200,
