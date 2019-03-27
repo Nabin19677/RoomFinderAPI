@@ -55,7 +55,7 @@ helpers.parseJwtDataToUserObject = function(token){
 }
 
 helpers.roomImageFileDescriptor = function(req){
-  filename = req.userObject.data.phone +'-'+ this.createRandomString(15) +'-'+ ( dateTime.format( new Date(), 'YYYYMMMDDdddHHmss'));
+  filename = req.userObject.data.phone +'-'+ this.createRandomString(10) +'-'+ ( dateTime.format( new Date(), 'YYYYMMMDDdddHHmss'));
   return './RoomImageUploads/' + filename + '.jpeg';
 }
 

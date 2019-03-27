@@ -7,7 +7,6 @@ var userCtrl = require('../Controllers/user');
 router.get('/profile', userCtrl.profile);
 router.put('/editInfo', userCtrl.editInfo);
 router.put('/changePassword', userCtrl.changePassword);
-router.put('/sendNotifications',userCtrl.sendNotifications);
 router.get('/notifications',userCtrl.getNotifications);
 router.put('/viewNotification',userCtrl.viewNotification);
 router.put('/notifiedNotification',userCtrl.notifiedNotification);

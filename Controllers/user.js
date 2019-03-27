@@ -229,44 +229,4 @@ userCtrl.getPersonalInfo = (req, res) => {
     })
 }
 
-
-userCtrl.sendNotifications = (req, res) => {
-    //req.body will have room details
-    console.log('When will I come here')
-    User.updateMany({
-        _id: { $nin: [req.userObject.data._id] },
-        personalDetails: {
-
-            typeOfRent : req.body.typeOfRent,
-            // food: req.userObject.data.personalDetails.food,
-            // smoking: req.userObject.data.personalDetails.smoking,
-            // drinking: req.userObject.data.personalDetails.drinking,
-            // cleanliness: req.userObject.data.personalDetails.cleanliness
-        }
-    }, {
-            $push: {
-                notifications: {
-                    type: 'room',
-                    pusherId: req.userObject.data._id,
-                    pusherName: req.userObject.data.fullname,
-                    message: `${req.userObject.data.fullname} added new Room of your interest.`,
-                    roomId: req.body._id
-                }
-            }
-        }, (err, raw) => {
-            if (err) {
-                console.log('user update error');
-                res.send({
-                    'statusCode': 500,
-                    'statusMessage': 'Something fissy with server'
-                });
-            } else {
-                console.log('user updated');
-                res.send({
-                    'statusCode': 200,
-                    'statusMessage': 'Room Added'
-                });
-            }
-        })
-}
 module.exports = userCtrl;

@@ -8,7 +8,7 @@ module.exports = (passport) => {
     opts.jwtFromRequest = ExtractJwt.fromHeader('token');
     opts.secretOrKey = config.jwtSecret;
     passport.use(
-        new jwtStrategy( opts , (jwt_payload, done) => {
+        new jwtStrategy( opts , (jwt_payload, done) => { // Java Web Token Strategy
             User.findOne({ id : jwt_payload.id } , (err , userData) => {
                 if(err){
                     return done(err,false);

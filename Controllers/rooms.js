@@ -7,7 +7,6 @@ const User = require('../Models/userSchema');
 rooms = {}
 
 rooms.addRoom = (req, res) => {
-    var roomData;
     if (req.body.typeOfRent && req.body.numberOfRoom && req.body.facilitiesAvailable && req.body.price && req.body.location && (req.body.RoomImage.length > 0)) {
         Room.create({
             ownerId: req.userObject.data._id,
@@ -20,9 +19,8 @@ rooms.addRoom = (req, res) => {
             price: req.body.price,
             location: req.body.location
         }).then(data => {
-            roomImageLength = req.body.RoomImage.length;
-            req.body.RoomImage.forEach((image, index) => {
-                roomImageFileDescriptor = helpers.roomImageFileDescriptor(req);
+            req.body.RoomImage.forEach(image => {
+                roomImageFileDescriptor = helpers.roomImageFileDescriptor(req);//working upto here
                 helpers.baseToImage(image, (err, imageData) => {
                     if (err) {
                         res.send({
@@ -45,13 +43,7 @@ rooms.addRoom = (req, res) => {
                                         }
                                     })
                                     .then(updated => {
-                                        if (roomImageLength == (index+1) ) {
-                                            res.send({
-                                                'statusCode': 200,
-                                                'statusMessage': 'Room has been added',
-                                                'roomData': data
-                                            })
-                                        }
+                                        console.log('updated');
                                     })
                                     .catch(err => {
                                         res.send({
@@ -64,13 +56,46 @@ rooms.addRoom = (req, res) => {
                     }
                 });
             });
-        })
+            User.findOne({ _id: req.userObject.data._id })
+            .then(userObj => {
+                User.updateMany({
+                    _id: { $nin: [userObj._id] }
+                }, {
+                        $push: {
+                            notifications: {
+                                type: 'room',
+                                pusherId: userObj._id,
+                                pusherName: userObj.fullname,
+                                message: `${userObj.fullname} added new Room of your interest.`,
+                                roomId: data._id
+                            }
+                        }
+                    }, (err, raw) => {
+                        if (err) {
+                            res.send({
+                                'statusCode': 500,
+                                'statusMessage': 'Something fissy with server'
+                            });
+                        } else {
+                            res.send({
+                                'statusCode': 200,
+                                'statusMessage': 'Room Added'
+                            });
+                        }
+                    })
+            })
             .catch(err => {
                 res.send({
                     'statusCode': 500,
                     'statusMessage': 'Something fissy wmith server'
                 });
             })
+        }).catch(err => {
+            res.send({
+                'statusCode': 500,
+                'statusMessage': 'Cannot save you room to database'
+            });
+        });
     } else {
         res.send({
             'statusCode': 400,

@@ -68,7 +68,7 @@ app.use('/room-finder/rooms', protection, sendUserObjectToRequest, roomRoute);
 
 //Socket logic goes here
 require('./socket/streams')(io);
-//Socket login ened here
+
 
 //Routing to chat
 var chatRoute = require('./Routes/chat');
@@ -78,7 +78,7 @@ app.use('/room-finder/chat',protection, sendUserObjectToRequest ,chatRoute);
 app.get('/room-finder', (req, res) => {
     res.send({
         'statusCode': httpCodes.CONTINUE,
-        'statusMessage': 'Its working, WELCOME TO ROOMFINDER APP'
+        'statusMessage': 'Its working, WELCOME TO ROOMFINDER'
     });
 });
 
